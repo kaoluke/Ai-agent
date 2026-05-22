@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> AI 作文批改</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css">
+    
+    <style>
+        :root { --primary-color: #1a73e8; --accent-color: #34a853; }
+        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background-color: #f4f6f8; margin: 0; padding: 20px; color: #2c3e50; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .card { background: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 30px; margin-bottom: 20px; }
+        
+        h1 { text-align: center; color: var(--primary-color); margin-top: 0; }
+        .input-|group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; color: #5f6368; }
+        input[type="text"], input[type="password"], textarea, select { 
+            width: 100%; padding: 12px; border: 1px solid #dadce0; border-radius: 8px; box-sizing: border-box; font-size: 16px;
+        }
+        
+        /* 檔案上傳樣式 */
+        .file-input-wrapper {
+            background: #f8f9fa; border: 2px dashed #dadce0; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s;
+        }
+        .file-input-wrapper:hover { border-color: var(--primary-color); background: #e8f0fe; }
+        #fileInput { display: none; }
+
+        /* 相機與照片顯示區 */
+        .media-container { 
+            width: 100%; background: #eee; border-radius: 12px; overflow: hidden; 
+            aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; position: relative; margin-top: 20px;
+        }
+        video, #capturedImage { width: 100%; height: 100%; object-fit: contain; }
+        #capturedImage { display: none; background: #fff; }
+
+        .btn-group { display: flex; gap: 10px; margin: 20px 0; }
+        button { 
+            flex: 1; padding: 15px; border: none; border-radius: 8px; cursor: pointer; 
+            font-size: 16px; font-weight: bold; transition: all 0.3s;
+        }
+        .btn-blue { background: var(--primary-color); color: white; }
+        .btn-green { background: var(--accent-color); color: white; }
+        .btn-outline { background: transparent; border: 2px solid #dadce0; color: #5f6368; }
+        button:disabled { background: #e8eaed; color: #9aa0a6; cursor: not-allowed; }
+
+        /* 結果顯示區 */
+        #resultArea { display: none; border-top: 2px solid #eee; margin-top: 30px; padding-top: 20px; }
+        .markdown-body { padding: 20px; background: #fff; border-radius: 8px; border: 1px solid #eee; }
+        
+        .loading-spinner {
+            display: none; text-align: center; padding: 20px; color: var(--primary-color); font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h1> AI 作文批改</h1>
+        
+        <div class="input-group">
+            <label>API Key</label>
+            <input type="password" id="apiKey" placeholder="貼上您的 Google AI API Key">
+        </div>
+
+        <div class="input-group">
+            <label>批改科目與題目要求</label>
+            <select id="subjectType" onchange="updateDefaultTopic()">
+                <option value="EN">英文作文</option>
+                <option value="CH">國語文寫作</option>
+            </select>
+            <textarea id="customTopic" rows="3" style="margin-top:10px;" placeholder="請輸入具體的作文題目或批改要求..."></textarea>
+        </div>
+
+        <div class="input-group">
+            <label>新增作文照片</label>
+            <div class="file-input-wrapper" onclick="document.getElementById('fileInput').click()">
+                <span id="fileLabel">點擊此選取照片</span>
+                <input type="file" id="fileInput" accept="image/*">
+            </div>
+        </div>
+
+        <p style="text-align: center; color: #666; font-size: 0.9em;">- 或者使用相機 -</p>
+
+        <div class="media-container">
+            <video id="video" autoplay playsinline style="display: none;"></video>
+            <div id="placeholder" style="color: #999;">尚未選取圖片</div>
+            <img id="capturedImage" alt="已擷取的作文照片">
+        </div>
+
+        <div class="btn-group">
+            <button id="startBtn" class="btn-blue">開啟相機</button>
+            <button id="captureBtn" class="btn-green" style="display:none;">拍照辨識</button>
+            <button id="analyzeBtn" class="btn-green" style="display:none;">開始 AI 批改</button>
+            <button id="retakeBtn" class="btn-outline" style="display:none;">重新選取/拍攝</button>
+        </div>
+
+        <div id="loading" class="loading-spinner">✨ AI 閱卷委員正在分析中，請稍候...</div>
+
+        <div id="resultArea">
+            <div style="display:flex; justify-content: space-between; align-items: center;">
+                <h2 style="color: var(--primary-color);">批改報告</h2>
+                <button onclick="window.print()" style="flex:none; padding: 5px 15px;">列印/存PDF</button>
+            </div>
+            <div id="formattedContent" class="markdown-body"></div>
+        </div>
+    </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "@google/generative-ai": "https://esm.run/@google/generative-ai"
+  }
+}
+</script>
+
+<script type="module">
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+let stream = null;
+let currentBase64 = null;
+const video = document.getElementById('video');
+const capturedImage = document.getElementById('capturedImage');
+const placeholder = document.getElementById('placeholder');
+const fileInput = document.getElementById('fileInput');
+const fileLabel = document.getElementById('fileLabel');
+
+const startBtn = document.getElementById('startBtn');
+const captureBtn = document.getElementById('captureBtn');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const retakeBtn = document.getElementById('retakeBtn');
+const customTopic = document.getElementById('customTopic');
+
+function updateDefaultTopic() {
+    const type = document.getElementById('subjectType').value;
+    if(type === 'EN') {
+        customTopic.value = "【題目】看圖寫作：寵物在生活中的角色。\n【要求】依 115 學測標準：第一段描述圖片現象，第二段說明原因及影響，文長至少 120 字。";
+    } else {
+        customTopic.value = "【題目】隔在我們之間的種種。\n【要求】依 115 國寫標準：需包含隔閡原因、換位思考及回應，給予 A+ 至 C 評等。";
+    }
+}
+updateDefaultTopic();
+window.updateDefaultTopic = updateDefaultTopic;
+
+// 關閉相機功能
+function stopCamera() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+    }
+    video.style.display = 'none';
+}
+
+// 1. 相機處理
+startBtn.onclick = async () => {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        video.srcObject = stream;
+        video.style.display = 'block';
+        placeholder.style.display = 'none';
+        capturedImage.style.display = 'none';
+        startBtn.style.display = 'none';
+        captureBtn.style.display = 'block';
+        analyzeBtn.style.display = 'none';
+        retakeBtn.style.display = 'none';
+    } catch (err) {
+        alert("無法啟動相機：" + err.message);
+    }
+};
+
+captureBtn.onclick = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    
+    currentBase64 = canvas.toDataURL('image/jpeg');
+    showPreview(currentBase64);
+};
+
+// 2. 檔案上傳處理
+fileInput.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        currentBase64 = event.target.result;
+        fileLabel.innerText = `已選取：${file.name}`;
+        showPreview(currentBase64);
+    };
+    reader.readAsDataURL(file);
+};
+
+// 顯示預覽畫面
+function showPreview(base64) {
+    stopCamera();
+    capturedImage.src = base64;
+    capturedImage.style.display = 'block';
+    placeholder.style.display = 'none';
+    
+    startBtn.style.display = 'none';
+    captureBtn.style.display = 'none';
+    analyzeBtn.style.display = 'block';
+    retakeBtn.style.display = 'block';
+}
+
+retakeBtn.onclick = () => {
+    stopCamera();
+    currentBase64 = null;
+    fileInput.value = "";
+    fileLabel.innerText = "點擊此選取照片";
+    capturedImage.style.display = 'none';
+    placeholder.style.display = 'block';
+    startBtn.style.display = 'block';
+    analyzeBtn.style.display = 'none';
+    retakeBtn.style.display = 'none';
+};
+
+analyzeBtn.onclick = () => {
+    if (!currentBase64) return;
+    runAI(currentBase64.split(',')[1]);
+};
+
+async function runAI(base64Image) {
+    const key = document.getElementById('apiKey').value;
+    if (!key) return alert("請輸入 API Key！");
+
+    const loading = document.getElementById('loading');
+    const resultArea = document.getElementById('resultArea');
+    const formattedContent = document.getElementById('formattedContent');
+
+    loading.style.display = 'block';
+    resultArea.style.display = 'none';
+    analyzeBtn.disabled = true;
+
+    try {
+        const genAI = new GoogleGenerativeAI(key);
+        const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+
+        const prompt = `你是一位專業的學測測閱卷老師。請辨識圖片中的手寫文字。
+            ${customTopic.value}
+            請根據 115 學年度學測評分原則（內容、組織、文法、修辭、字數規範等）進行批改。
+            請使用 Markdown 格式輸出，包含標題、分點列表與評分表。`;
+
+        const result = await model.generateContent([
+            prompt,
+            { inlineData: { data: base64Image, mimeType: "image/jpeg" } }
+        ]);
+
+        const text = await result.response.text();
+        formattedContent.innerHTML = marked.parse(text);
+        
+        loading.style.display = 'none';
+        resultArea.style.display = 'block';
+        resultArea.scrollIntoView({ behavior: 'smooth' });
+    } catch (err) {
+        alert("AI 批改發生錯誤：" + err.message);
+        loading.style.display = 'none';
+    } finally {
+        analyzeBtn.disabled = false;
+    }
+}
+</script>
+
+</body>
+</html>
