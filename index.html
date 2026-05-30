@@ -337,7 +337,7 @@ analyzeBtn.onclick = async () => {
 
     try {
         const genAI = new GoogleGenerativeAI(key);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
         const prompt = `你是一位專業的台灣學測閱卷委員。請辨識圖片中的手寫文字。\n${customTopic.value}\n請根據 115 學測評分原則進行批改，並使用 Markdown 格式輸出標題、列表與修改建議。`;
         
         const result = await model.generateContent([ prompt, { inlineData: { data: currentBase64.split(',')[1], mimeType: "image/jpeg" } } ]);
