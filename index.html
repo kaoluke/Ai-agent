@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>115 學測 AI 作文批改專業版 (質感優化版)</title>
+    <title>115 學測 AI 批改助手 (Google 登入整合版)</title>
     
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css">
@@ -18,6 +18,7 @@
             --accent-hover: #2b8c46;
             --bg-color: #f0f4f8; 
             --text-main: #2d3748;
+            --sidebar-width: 300px;
         }
         
         body { 
@@ -25,213 +26,217 @@
             background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
             min-height: 100vh;
             margin: 0; 
-            padding: 20px; 
+            padding: 24px; 
             color: var(--text-main); 
+            box-sizing: border-box;
+        }
+
+        .app-container {
+            display: flex;
+            gap: 24px;
+            max-width: 1250px;
+            margin: 0 auto;
+            align-items: flex-start;
         }
         
-        .container { max-width: 900px; margin: 0 auto; }
-        
-        /* 質感主卡片 */
-        .card { 
+        .sidebar { 
+            width: var(--sidebar-width);
+            flex-shrink: 0;
             background: #ffffff; 
             border-radius: 16px; 
-            box-shadow: 0 10px 35px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.03); 
-            padding: 35px; 
-            margin-bottom: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            padding: 24px; 
+            box-sizing: border-box;
             border: 1px solid rgba(255,255,255,0.8);
+            position: sticky; 
+            top: 24px;
+            max-height: calc(100vh - 48px);
+            display: flex;
+            flex-direction: column;
         }
-        
-        .header-container { 
-            display: flex; justify-content: space-between; align-items: center; 
-            margin-bottom: 25px; border-bottom: 2px solid #edf2f7; padding-bottom: 15px; 
+
+        .sidebar-header {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        h1 { color: var(--primary-color); margin: 0; font-size: 1.6rem; letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(26,115,232,0.1); }
+
+        .sidebar-sub {
+            font-size: 0.8rem;
+            color: #718096;
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+
+        /* Google 用户資訊卡片樣式 */
+        .account-card {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 16px;
+        }
+        .user-avatar { width: 42px; height: 42px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .user-info-text { flex-grow: 1; min-width: 0; }
+        .user-name { font-weight: bold; font-size: 0.95rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-email { font-size: 0.75rem; color: #718096; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .history-list {
+            overflow-y: auto;
+            flex-grow: 1;
+            padding-right: 4px;
+        }
+
+        .main-content { flex-grow: 1; min-width: 0; }
+        .card { background: #ffffff; border-radius: 16px; box-shadow: 0 10px 35px rgba(0,0,0,0.06); padding: 35px; border: 1px solid rgba(255,255,255,0.8); }
+        .header-container { margin-bottom: 25px; border-bottom: 2px solid #edf2f7; padding-bottom: 15px; }
+        h1 { color: var(--primary-color); margin: 0; font-size: 1.6rem; letter-spacing: 0.5px; }
         
-        /* 輸入框與特效 */
         .input-group { margin-bottom: 18px; }
         label { display: block; font-weight: 600; margin-bottom: 6px; color: #4a5568; font-size: 0.95rem; }
-        input[type="text"], input[type="password"], textarea, select { 
-            width: 100%; padding: 14px; border: 1px solid #cbd5e0; border-radius: 10px; 
-            box-sizing: border-box; font-size: 16px; background-color: #f8fafc;
-            transition: all 0.3s ease;
-        }
-        /* 焦點發光特效 */
-        input:focus, textarea:focus, select:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            background-color: #fff;
-            box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.15);
-        }
+        input[type="text"], textarea, select { width: 100%; padding: 14px; border: 1px solid #cbd5e0; border-radius: 10px; box-sizing: border-box; font-size: 16px; background-color: #f8fafc; transition: all 0.3s ease; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--primary-color); background-color: #fff; box-shadow: 0 0 0 4px rgba(26, 115, 232, 0.15); }
         
-        .setup-box { background: #f7fafc; border: 1px solid #e2e8f0; padding: 18px; border-radius: 12px; margin-bottom: 25px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
-        
-        /* 檔案上傳區塊特效 */
-        .file-input-wrapper { 
-            background: #ffffff; border: 2px dashed #cbd5e0; border-radius: 12px; padding: 25px; 
-            text-align: center; cursor: pointer; transition: all 0.3s ease;
-        }
-        .file-input-wrapper:hover { 
-            border-color: var(--primary-color); background: #ebf8ff; 
-            transform: translateY(-2px); box-shadow: 0 4px 12px rgba(26,115,232,0.1);
-        }
+        .file-input-wrapper { background: #ffffff; border: 2px dashed #cbd5e0; border-radius: 12px; padding: 25px; text-align: center; cursor: pointer; transition: all 0.3s ease; }
+        .file-input-wrapper:hover { border-color: var(--primary-color); background: #ebf8ff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(26,115,232,0.1); }
         #fileInput { display: none; }
         #fileLabel { font-size: 1rem; color: #4a5568; font-weight: 500; }
 
         .divider { text-align: center; color: #a0aec0; font-size: 0.9em; margin: 20px 0; display: flex; align-items: center; font-weight: 500; }
         .divider::before, .divider::after { content: ""; flex: 1; border-bottom: 1px solid #e2e8f0; margin: 0 15px; }
 
-        .media-container { 
-            width: 100%; background: #1a202c; border-radius: 12px; overflow: hidden; 
-            aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; 
-            position: relative; box-shadow: inset 0 4px 10px rgba(0,0,0,0.5);
-        }
+        .media-container { width: 100%; background: #1a202c; border-radius: 12px; overflow: hidden; aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; position: relative; box-shadow: inset 0 4px 10px rgba(0,0,0,0.5); }
         video, #capturedImage { width: 100%; height: 100%; object-fit: contain; }
         #capturedImage { display: none; background: #000; }
 
-        /* ====================
-           按鈕 3D 陰影與動畫 
-           ==================== */
         .btn-group { display: flex; gap: 15px; margin: 25px 0; flex-wrap: wrap; }
-        button { 
-            flex: 1; min-width: 140px; padding: 14px 20px; border: none; border-radius: 10px; cursor: pointer; 
-            font-size: 1.05rem; font-weight: 600; display: flex; justify-content: center; align-items: center; gap: 8px;
-            transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.08); /* 預設陰影 */
-        }
-        button:hover:not(:disabled) {
-            transform: translateY(-3px); /* 懸浮升起 */
-            box-shadow: 0 8px 15px rgba(0,0,0,0.15); /* 懸浮加深陰影 */
-        }
-        button:active:not(:disabled) {
-            transform: translateY(1px); /* 點擊下壓 */
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* 點擊陰影縮小 */
-        }
+        button { flex: 1; min-width: 140px; padding: 14px 20px; border: none; border-radius: 10px; cursor: pointer; font-size: 1.05rem; font-weight: 600; display: flex; justify-content: center; align-items: center; gap: 8px; transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 4px 6px rgba(0,0,0,0.08); }
+        button:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.15); }
+        button:active:not(:disabled) { transform: translateY(1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         button:disabled { background: #e2e8f0; color: #a0aec0; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        /* 小尺寸按鈕專用 (用於登出) */
+        .btn-sm { flex: none !important; min-width: auto !important; padding: 6px 10px !important; font-size: 0.8rem !important; margin: 0 !important; }
 
         .btn-blue { background: linear-gradient(135deg, #1a73e8, #155dbb); color: white; }
         .btn-green { background: linear-gradient(135deg, #34a853, #22803b); color: white; }
         .btn-drive { background: white; color: #4a5568; border: 1px solid #e2e8f0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .btn-outline { background: transparent; border: 2px solid #cbd5e0; color: #4a5568; box-shadow: none; }
         .btn-outline:hover:not(:disabled) { border-color: var(--primary-color); color: var(--primary-color); }
-        .btn-history { background: linear-gradient(135deg, #fffaf0, #feebc8); color: #dd6b20; border: 1px solid #fbd38d; }
 
         #resultArea { display: none; border-top: 2px solid #edf2f7; margin-top: 30px; padding-top: 25px; }
         .markdown-body { padding: 25px; background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-        .loading-spinner { display: none; text-align: center; padding: 20px; color: var(--primary-color); font-weight: bold; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
-
-        /* ====================
-           歷史紀錄 Modal 樣式 
-           ==================== */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); backdrop-filter: blur(5px); transition: opacity 0.3s; }
-        .modal-content { background-color: #fff; margin: 8% auto; padding: 25px; border-radius: 16px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); animation: slideDown 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes slideDown { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
-        .close-btn { color: #a0aec0; float: right; font-size: 32px; font-weight: bold; cursor: pointer; line-height: 1; transition: color 0.2s; }
-        .close-btn:hover { color: #2d3748; }
+        .loading-spinner { display: none; text-align: center; padding: 25px; color: var(--primary-color); font-weight: bold; background: #ebf8ff; border-radius: 12px; border: 1px dashed var(--primary-color); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
         
-        /* 歷史紀錄單項特效 */
-        .history-item { 
-            padding: 16px; border: 1px solid #edf2f7; cursor: pointer; transition: all 0.3s ease; 
-            border-radius: 10px; margin-bottom: 10px; background: #fff;
-        }
-        .history-item:hover { 
-            background-color: #f7fafc; 
-            transform: translateX(6px); /* 往右推移特效 */
-            box-shadow: -4px 4px 12px rgba(0,0,0,0.06); border-color: #cbd5e0;
-        }
-        .history-date { font-size: 0.85em; color: #718096; }
-        .history-title { font-weight: bold; margin: 6px 0; color: var(--primary-color); font-size: 1.1rem; }
-        .history-preview { font-size: 0.9em; color: #a0aec0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .history-item { padding: 14px; border: 1px solid #edf2f7; cursor: pointer; transition: all 0.25s ease; border-radius: 10px; margin-bottom: 10px; background: #fff; }
+        .history-item:hover { background-color: #f8fafc; transform: translateX(6px); box-shadow: -4px 4px 12px rgba(0,0,0,0.05); border-color: #cbd5e0; }
+        .history-date { font-size: 0.8em; color: #718096; margin-top: 4px; }
+        .history-title { font-weight: bold; color: var(--primary-color); font-size: 1rem; }
+        .history-preview { font-size: 0.85em; color: #a0aec0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 4px; }
 
-        @media (max-width: 768px) {
-            body { padding: 10px; }
-            .card { padding: 20px; }
+        .history-list::-webkit-scrollbar { width: 5px; }
+        .history-list::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .history-list::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 10px; }
+
+        @media (max-width: 850px) {
+            body { padding: 12px; }
+            .app-container { flex-direction: column; gap: 16px; align-items: stretch; }
+            .sidebar { width: 100%; position: static; max-height: 320px; }
+            .card { padding: 22px; }
             .btn-group { flex-direction: column; gap: 12px; }
             button { width: 100%; padding: 15px; }
-            .header-actions { flex-direction: column; gap: 12px; align-items: stretch !important; }
-            .modal-content { margin: 15% auto; width: 95%; max-height: 75vh; padding: 20px; }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="card">
-        <div class="header-container">
-            <h1>📝 115 學測 AI 批改助手</h1>
-            <button onclick="openHistoryModal()" class="btn-history" style="flex:none; width:auto; padding: 8px 16px; min-width: auto; font-size: 0.95rem;">📜 歷史紀錄</button>
+<div class="app-container">
+    
+    <aside class="sidebar">
+        <div class="sidebar-header">👤 Google 帳戶</div>
+        <div id="googleSignInWrapper" style="margin-bottom: 16px;">
+            <div id="googleSignInBtn"></div>
+        </div>
+        <div id="googleUserCard" class="account-card">
+            <img id="userAvatar" class="user-avatar" src="" alt="大頭貼">
+            <div class="user-info-text">
+                <div id="userName" class="user-name">未登入</div>
+                <div id="userEmail" class="user-email"></div>
+            </div>
+            <button id="logoutBtn" class="btn-outline btn-sm">登出</button>
         </div>
         
-        <div class="setup-box">
+        <hr style="border: 0; border-top: 1px solid #edf2f7; margin: 0 0 16px 0;">
+
+        <div class="sidebar-header">📜 歷史紀錄</div>
+        <div class="sidebar-sub">保存最近的 20 筆批改紀錄。</div>
+        <div id="historyList" class="history-list"></div>
+    </aside>
+
+    <main class="main-content">
+        <div class="card">
+            <div class="header-container">
+                <h1>📝 115 學測 AI 批改助手</h1>
+            </div>
+
             <div class="input-group">
-                <label>1. Google AI API Key</label>
-                <input type="password" id="apiKey" placeholder="請貼上 Gemini API Key">
+                <label>批改科目與題目要求</label>
+                <select id="subjectType" onchange="updateDefaultTopic()">
+                    <option value="EN">英文作文</option>
+                    <option value="CH">國語文寫作</option>
+                </select>
+                <textarea id="customTopic" rows="3" style="margin-top:10px;" placeholder="請輸入具體的作文題目或批改要求..."></textarea>
             </div>
-            <div class="input-group" style="margin-bottom: 0;">
-                <label>2. Google Client ID (雲端硬碟儲存用 - 選填)</label>
-                <input type="text" id="clientId" placeholder="請貼上 Google OAuth Client ID">
-            </div>
-        </div>
 
-        <div class="input-group">
-            <label>批改科目與題目要求</label>
-            <select id="subjectType" onchange="updateDefaultTopic()">
-                <option value="EN">英文作文</option>
-                <option value="CH">國語文寫作</option>
-            </select>
-            <textarea id="customTopic" rows="3" style="margin-top:10px;" placeholder="請輸入具體的作文題目或批改要求..."></textarea>
-        </div>
-
-        <div class="input-group">
-            <div class="file-input-wrapper" onclick="document.getElementById('fileInput').click()">
-                <div style="font-size: 1.8rem; margin-bottom: 8px;">📁</div>
-                <span id="fileLabel">點擊此處從相簿上傳照片</span>
-                <input type="file" id="fileInput" accept="image/*">
-            </div>
-        </div>
-
-        <div class="divider">或使用相機即時拍攝</div>
-
-        <div class="media-container">
-            <video id="video" autoplay playsinline style="display: none;"></video>
-            <div id="placeholder" style="color: #cbd5e0; font-size: 1rem; font-weight: bold;">影像預覽區</div>
-            <img id="capturedImage" alt="作文照片">
-        </div>
-
-        <div class="btn-group">
-            <button id="startBtn" class="btn-blue">📷 開啟相機</button>
-            <button id="captureBtn" class="btn-green" style="display:none;">📸 拍照</button>
-            <button id="analyzeBtn" class="btn-green" style="display:none;">✨ 開始 AI 批改</button>
-            <button id="retakeBtn" class="btn-outline" style="display:none;">🔄 重新選取/拍攝</button>
-        </div>
-
-        <div id="loading" class="loading-spinner">✨ AI 閱卷委員正在認真分析中，請稍候...</div>
-
-        <div id="resultArea">
-            <div class="header-actions" style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
-                <h2 style="color: var(--primary-color); margin: 0; font-size: 1.4rem;" id="reportTitle">批改報告</h2>
-                <div style="display: flex; gap: 12px;">
-                    <button id="saveDriveBtn" class="btn-drive" style="min-width: auto; padding: 10px 16px; font-size: 0.95rem;">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" width="18" height="18" alt="Drive"> 
-                        存至雲端硬碟
-                    </button>
-                    <button onclick="window.print()" class="btn-outline" style="min-width: auto; padding: 10px 16px; font-size: 0.95rem;">🖨️ PDF</button>
+            <div class="input-group">
+                <div class="file-input-wrapper" onclick="document.getElementById('fileInput').click()">
+                    <div style="font-size: 1.8rem; margin-bottom: 8px;">📁</div>
+                    <span id="fileLabel">點擊此處從相簿上傳照片</span>
+                    <input type="file" id="fileInput" accept="image/*">
                 </div>
             </div>
-            <div id="formattedContent" class="markdown-body"></div>
-        </div>
-    </div>
-</div>
 
-<div id="historyModal" class="modal">
-    <div class="modal-content">
-        <span class="close-btn" onclick="closeHistoryModal()">&times;</span>
-        <h2 style="margin-top: 0; color: var(--primary-color); font-size: 1.5rem;">📜 批改歷史紀錄</h2>
-        <p style="font-size: 0.9em; color: #718096; margin-bottom: 20px; border-bottom: 1px solid #edf2f7; padding-bottom: 15px;">註：紀錄保存在您當前設備的瀏覽器中（最多 20 筆）。</p>
-        <div id="historyList">
+            <div class="divider">或使用相機即時拍攝</div>
+
+            <div class="media-container">
+                <video id="video" autoplay playsinline style="display: none;"></video>
+                <div id="placeholder" style="color: #cbd5e0; font-size: 1rem; font-weight: bold;">影像預覽區</div>
+                <img id="capturedImage" alt="作文照片">
             </div>
-    </div>
+
+            <div class="btn-group">
+                <button id="startBtn" class="btn-blue">📷 開啟相機</button>
+                <button id="captureBtn" class="btn-green" style="display:none;">📸 拍照</button>
+                <button id="analyzeBtn" class="btn-green" style="display:none;">✨ 開始 AI 批改</button>
+                <button id="retakeBtn" class="btn-outline" style="display:none;">🔄 重新選取/拍攝</button>
+            </div>
+
+            <div id="loading" class="loading-spinner">✨ AI 閱卷委員正在認真分析中，請稍候...</div>
+
+            <div id="resultArea">
+                <div class="header-actions" style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+                    <h2 style="color: var(--primary-color); margin: 0; font-size: 1.4rem;" id="reportTitle">批改報告</h2>
+                    <div style="display: flex; gap: 12px;">
+                        <button id="saveDriveBtn" class="btn-drive" style="min-width: auto; padding: 10px 16px; font-size: 0.95rem;">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" width="18" height="18" alt="Drive"> 
+                            存至雲端硬碟
+                        </button>
+                        <button onclick="window.print()" class="btn-outline" style="min-width: auto; padding: 10px 16px; font-size: 0.95rem;">🖨️ PDF</button>
+                    </div>
+                </div>
+                <div id="formattedContent" class="markdown-body"></div>
+            </div>
+        </div>
+    </main>
 </div>
 
 <script type="importmap">
@@ -244,6 +249,13 @@
 
 <script type="module">
 import { GoogleGenerativeAI } from "@google/generative-ai";
+
+/* =======================================================
+   🔑 金鑰鑲嵌區 (請在下方單引號內填入您的真實憑證金鑰)
+   ======================================================= */
+const GEMINI_API_KEY = 'AIzaSyCGpATU8BwSmzBXyP6UhMfAmFjnfofYA5Q';
+const GOOGLE_CLIENT_ID = 'AIzaSyCGpATU8BwSmzBXyP6UhMfAmFjnfofYA5Q';
+
 
 let stream = null;
 let currentBase64 = null;
@@ -262,22 +274,98 @@ const analyzeBtn = document.getElementById('analyzeBtn');
 const retakeBtn = document.getElementById('retakeBtn');
 const saveDriveBtn = document.getElementById('saveDriveBtn');
 const customTopic = document.getElementById('customTopic');
-const historyModal = document.getElementById('historyModal');
 
-window.onload = () => {
-    document.getElementById('apiKey').value = localStorage.getItem('essay_grader_api_key') || '';
-    document.getElementById('clientId').value = localStorage.getItem('essay_grader_client_id') || '';
+// 💡 頁面載入初始化
+window.onload = () => { 
+    renderHistorySidePanel(); 
+    initGoogleSignIn(); // 初始化 Google 登入按鈕
 };
 
-document.getElementById('apiKey').addEventListener('input', (e) => localStorage.setItem('essay_grader_api_key', e.target.value));
-document.getElementById('clientId').addEventListener('input', (e) => localStorage.setItem('essay_grader_client_id', e.target.value));
+/* =======================================================
+   🌐 核心新增：Google 帳戶登入與資訊讀取邏輯
+   ======================================================= */
+function initGoogleSignIn() {
+    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes("請在此處貼上")) {
+        console.warn("提示：尚未在程式碼第 191 行填入真實的 GOOGLE_CLIENT_ID，暫不啟用登入按鈕。");
+        return;
+    }
 
+    // 1. 初始化 Google 帳戶服務
+    google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse
+    });
+
+    // 2. 檢查本地有無緩存舊登入資料
+    const cachedUser = localStorage.getItem('google_user_info');
+    if (cachedUser) {
+        showLoggedInUI(JSON.parse(cachedUser));
+    } else {
+        renderGoogleSignInButton();
+    }
+}
+
+function renderGoogleSignInButton() {
+    document.getElementById('googleSignInWrapper').style.display = 'block';
+    document.getElementById('googleUserCard').style.display = 'none';
+    
+    // 渲染官方標準樣式登入按鈕
+    google.accounts.id.renderButton(
+        document.getElementById("googleSignInBtn"),
+        { theme: "outline", size: "large", width: 252 }
+    );
+}
+
+// 登入成功後的回呼函式 (Google 會回傳身分 JWT 憑證)
+function handleCredentialResponse(response) {
+    try {
+        // 解碼 Google 傳回的 JWT Token 載荷 (純前端解碼)
+        const base64Url = response.credential.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+
+        // 讀取網頁所需的用戶資料
+        const profile = JSON.parse(jsonPayload);
+        const userData = {
+            name: profile.name,        // 姓名
+            email: profile.email,      // 電子郵件
+            picture: profile.picture   // 大頭貼網址
+        };
+
+        // 儲存至本地快取並更新介面
+        localStorage.setItem('google_user_info', JSON.stringify(userData));
+        showLoggedInUI(userData);
+    } catch (err) {
+        alert("Google 登入資料讀取失敗：" + err.message);
+    }
+}
+
+function showLoggedInUI(user) {
+    document.getElementById('googleSignInWrapper').style.display = 'none';
+    document.getElementById('googleUserCard').style.display = 'flex';
+    document.getElementById('userAvatar').src = user.picture;
+    document.getElementById('userName').innerText = user.name;
+    document.getElementById('userEmail').innerText = user.email;
+}
+
+// 登出按鈕事件
+document.getElementById('logoutBtn').onclick = () => {
+    localStorage.removeItem('google_user_info');
+    renderGoogleSignInButton();
+};
+
+
+/* =======================================================
+   原作文批改核心邏輯 (保留雙模型備援)
+   ======================================================= */
 function updateDefaultTopic() {
     const type = document.getElementById('subjectType').value;
     if(type === 'EN') {
-        customTopic.value = "【題目】看圖寫作：寵物在生活中的角色。\n【要求】依 115 學測標準：第一段描述圖片現象，第二段說明原因及影響，文長至少 120 字。";
+        customTopic.value = "【題目】看圖寫作：寵物在生活中的角色。\n【要求】依 學測標準：第一段描述圖片現象，第二段說明原因及影響，文長至少 120 字。";
     } else {
-        customTopic.value = "【題目】隔在我們之間的種種。\n【要求】依 115 國寫標準：需包含隔閡原因、換位思考及回應，給予 A+ 至 C 評等。";
+        customTopic.value = "【題目】隔在我們之間的種種。\n【要求】依 學測國寫標準：需包含隔閡原因、換位思考及回應，給予 A+ 至 C 評等。";
     }
 }
 updateDefaultTopic();
@@ -293,7 +381,6 @@ startBtn.onclick = async () => {
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
         video.srcObject = stream; video.style.display = 'block'; placeholder.style.display = 'none';
         capturedImage.style.display = 'none'; startBtn.style.display = 'none'; captureBtn.style.display = 'block';
-        analyzeBtn.style.display = 'none'; retakeBtn.style.display = 'none';
     } catch (err) { alert("無法啟動相機：" + err.message); }
 };
 
@@ -323,24 +410,49 @@ retakeBtn.onclick = () => {
     analyzeBtn.style.display = 'none'; retakeBtn.style.display = 'none'; document.getElementById('resultArea').style.display = 'none';
 };
 
+async function generateWithRetryAndFallback(genAI, contentArray, maxRetries = 3, initialDelay = 2000) {
+    let delay = initialDelay;
+    const loading = document.getElementById('loading');
+    let model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            return await model.generateContent(contentArray);
+        } catch (err) {
+            const is503 = err.message && (err.message.includes("503") || err.message.toLowerCase().includes("high demand"));
+            if (!is503) throw err;
+            if (i === maxRetries - 1) {
+                loading.innerText = `🔄 伺服器爆量，正在切換至高併發備援模型 (gemini-3.1-flash-lite)...`;
+                const fallbackModel = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" });
+                return await fallbackModel.generateContent(contentArray);
+            }
+            loading.innerText = `⏰ 伺服器忙碌中，正在進行第 ${i + 1} 次自動重試...`;
+            await new Promise(resolve => setTimeout(resolve, delay));
+            delay *= 2;
+        }
+    }
+}
+
 analyzeBtn.onclick = async () => {
     if (!currentBase64) return;
-    const key = document.getElementById('apiKey').value;
-    if (!key) return alert("請輸入 Google AI API Key！");
+    if (!GEMINI_API_KEY || GEMINI_API_KEY.includes("請在此處貼上")) {
+        return alert("錯誤：請先在程式碼中的 GEMINI_API_KEY 變數中填入真實的金鑰！");
+    }
 
     const loading = document.getElementById('loading');
     const resultArea = document.getElementById('resultArea');
     const formattedContent = document.getElementById('formattedContent');
 
+    loading.innerText = "✨ AI 閱卷委員正在認真分析中，請稍候...";
     loading.style.display = 'block'; resultArea.style.display = 'none';
     analyzeBtn.disabled = true; retakeBtn.disabled = true;
 
     try {
-        const genAI = new GoogleGenerativeAI(key);
-        const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
         const prompt = `你是一位專業的台灣學測閱卷委員。請辨識圖片中的手寫文字。\n${customTopic.value}\n請根據 115 學測評分原則進行批改，並使用 Markdown 格式輸出標題、列表與修改建議。`;
+        const contentArray = [ prompt, { inlineData: { data: currentBase64.split(',')[1], mimeType: "image/jpeg" } } ];
         
-        const result = await model.generateContent([ prompt, { inlineData: { data: currentBase64.split(',')[1], mimeType: "image/jpeg" } } ]);
+        const result = await generateWithRetryAndFallback(genAI, contentArray, 3, 2000);
         rawMarkdownResult = await result.response.text(); 
         
         document.getElementById('reportTitle').innerText = "批改報告";
@@ -348,10 +460,10 @@ analyzeBtn.onclick = async () => {
         loading.style.display = 'none'; resultArea.style.display = 'block';
         
         saveToHistory(rawMarkdownResult);
-
         setTimeout(() => resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
     } catch (err) { 
-        alert("AI 批改發生錯誤：" + err.message); loading.style.display = 'none'; 
+        alert("AI 批改發生錯誤：" + err.message); 
+        loading.style.display = 'none'; 
     } finally { analyzeBtn.disabled = false; retakeBtn.disabled = false; }
 };
 
@@ -361,13 +473,14 @@ function saveToHistory(markdown) {
     history.unshift({ id: Date.now(), date: new Date().toLocaleString('zh-TW'), subject: subjectText, markdown: markdown });
     if (history.length > 20) history.pop();
     localStorage.setItem('essay_grader_history', JSON.stringify(history));
+    renderHistorySidePanel(); 
 }
 
-window.openHistoryModal = () => {
+function renderHistorySidePanel() {
     const listContainer = document.getElementById('historyList');
     let history = JSON.parse(localStorage.getItem('essay_grader_history')) || [];
     if (history.length === 0) {
-        listContainer.innerHTML = '<p style="text-align:center; color:#a0aec0; margin-top:30px; font-weight: 500;">目前尚無歷史紀錄。</p>';
+        listContainer.innerHTML = '<p style="text-align:center; color:#a0aec0; margin-top:30px; font-weight: 500; font-size:0.9rem;">目前尚無歷史紀錄。</p>';
     } else {
         listContainer.innerHTML = history.map((item, index) => `
             <div class="history-item" onclick="loadHistoryItem(${index})">
@@ -377,14 +490,7 @@ window.openHistoryModal = () => {
             </div>
         `).join('');
     }
-    historyModal.style.display = 'block';
-    setTimeout(() => historyModal.style.opacity = '1', 10);
-};
-
-window.closeHistoryModal = () => {
-    historyModal.style.opacity = '0';
-    setTimeout(() => historyModal.style.display = 'none', 300);
-};
+}
 
 window.loadHistoryItem = (index) => {
     let history = JSON.parse(localStorage.getItem('essay_grader_history')) || [];
@@ -394,34 +500,26 @@ window.loadHistoryItem = (index) => {
         document.getElementById('reportTitle').innerText = `批改報告 (歷史紀錄：${item.date})`;
         document.getElementById('formattedContent').innerHTML = marked.parse(item.markdown);
         document.getElementById('resultArea').style.display = 'block';
-        
-        placeholder.style.display = 'flex';
-        placeholder.innerText = '歷史紀錄不顯示原始圖片';
-        capturedImage.style.display = 'none';
-        
-        closeHistoryModal();
-        setTimeout(() => document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+        placeholder.style.display = 'flex'; placeholder.innerText = '歷史紀錄不顯示原始圖片'; capturedImage.style.display = 'none';
+        setTimeout(() => document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
     }
 };
 
-window.onclick = function(event) { if (event.target == historyModal) closeHistoryModal(); }
-
 saveDriveBtn.onclick = () => {
-    const clientId = document.getElementById('clientId').value.trim();
-    if (!clientId) return alert("請先在上方設定區輸入您的 Google Client ID！");
+    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes("請在此處貼上")) {
+        return alert("錯誤：若要使用雲端硬碟功能，請先在程式碼中的 GOOGLE_CLIENT_ID 中填入憑證！");
+    }
     if (!rawMarkdownResult) return alert("沒有可儲存的批改結果。");
-
     saveDriveBtn.innerHTML = "⏳ 授權與儲存中..."; saveDriveBtn.disabled = true;
 
     tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: clientId, scope: 'https://www.googleapis.com/auth/drive.file',
+        client_id: GOOGLE_CLIENT_ID, scope: 'https://www.googleapis.com/auth/drive.file',
         callback: (tokenResponse) => {
             if (tokenResponse && tokenResponse.access_token) { gDriveAccessToken = tokenResponse.access_token; uploadToDrive(); } 
             else { alert("登入或授權失敗。"); resetDriveBtn(); }
         },
         error_callback: (err) => { alert("授權發生錯誤，請檢查 Client ID。"); resetDriveBtn(); }
     });
-
     if (gDriveAccessToken) uploadToDrive(); else tokenClient.requestAccessToken();
 };
 
