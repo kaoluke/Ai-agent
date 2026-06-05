@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>115 學測 AI 批改助手 (Google 登入整合版)</title>
+    <title>115 AI 批改</title>
     
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css">
@@ -72,20 +72,19 @@
             line-height: 1.4;
         }
 
-        /* Google 用户資訊卡片樣式 */
+        /* Google 用户資訊卡片樣式優化 */
         .account-card {
             display: none;
-            align-items: center;
-            gap: 12px;
+            flex-direction: column;
             background: #f8fafc;
-            padding: 12px;
+            padding: 14px;
             border-radius: 12px;
             border: 1px solid #e2e8f0;
             margin-bottom: 16px;
         }
         .user-avatar { width: 42px; height: 42px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
         .user-info-text { flex-grow: 1; min-width: 0; }
-        .user-name { font-weight: bold; font-size: 0.95rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-name { font-weight: bold; font-size: 0.95rem; color: var(--textMain); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .user-email { font-size: 0.75rem; color: #718096; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         .history-list {
@@ -122,8 +121,7 @@
         button:active:not(:disabled) { transform: translateY(1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         button:disabled { background: #e2e8f0; color: #a0aec0; cursor: not-allowed; box-shadow: none; transform: none; }
 
-        /* 小尺寸按鈕專用 (用於登出) */
-        .btn-sm { flex: none !important; min-width: auto !important; padding: 6px 10px !important; font-size: 0.8rem !important; margin: 0 !important; }
+        .btn-sm { flex: none !important; min-width: auto !important; padding: 6px 12px !important; font-size: 0.8rem !important; margin: 0 !important; }
 
         .btn-blue { background: linear-gradient(135deg, #1a73e8, #155dbb); color: white; }
         .btn-green { background: linear-gradient(135deg, #34a853, #22803b); color: white; }
@@ -150,7 +148,7 @@
         @media (max-width: 850px) {
             body { padding: 12px; }
             .app-container { flex-direction: column; gap: 16px; align-items: stretch; }
-            .sidebar { width: 100%; position: static; max-height: 320px; }
+            .sidebar { width: 100%; position: static; max-height: 400px; }
             .card { padding: 22px; }
             .btn-group { flex-direction: column; gap: 12px; }
             button { width: 100%; padding: 15px; }
@@ -167,25 +165,30 @@
             <div id="googleSignInBtn"></div>
         </div>
         <div id="googleUserCard" class="account-card">
-            <img id="userAvatar" class="user-avatar" src="" alt="大頭貼">
-            <div class="user-info-text">
-                <div id="userName" class="user-name">未登入</div>
-                <div id="userEmail" class="user-email"></div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <img id="userAvatar" class="user-avatar" src="" alt="大頭貼">
+                <div class="user-info-text">
+                    <div id="userName" class="user-name">未登入</div>
+                    <div id="userEmail" class="user-email"></div>
+                </div>
             </div>
-            <button id="logoutBtn" class="btn-outline btn-sm">登出</button>
+            <div style="display: flex; gap: 8px; margin-top: 12px;">
+                <button id="syncDriveBtn" class="btn-drive btn-sm" style="flex: 1 !important; justify-content: center;">🔄 同步雲端歷史</button>
+                <button id="logoutBtn" class="btn-outline btn-sm">登出</button>
+            </div>
         </div>
         
         <hr style="border: 0; border-top: 1px solid #edf2f7; margin: 0 0 16px 0;">
 
-        <div class="sidebar-header">📜 歷史紀錄</div>
-        <div class="sidebar-sub">保存最近的 20 筆批改紀錄。</div>
+        <div class="sidebar-header">歷史紀錄</div>
+        <div class="sidebar-sub">讀取本地與 Google 雲端。</div>
         <div id="historyList" class="history-list"></div>
     </aside>
 
     <main class="main-content">
         <div class="card">
             <div class="header-container">
-                <h1>📝 115 學測 AI 批改助手</h1>
+                <h1>AI 批改</h1>
             </div>
 
             <div class="input-group">
@@ -214,13 +217,13 @@
             </div>
 
             <div class="btn-group">
-                <button id="startBtn" class="btn-blue">📷 開啟相機</button>
-                <button id="captureBtn" class="btn-green" style="display:none;">📸 拍照</button>
-                <button id="analyzeBtn" class="btn-green" style="display:none;">✨ 開始 AI 批改</button>
-                <button id="retakeBtn" class="btn-outline" style="display:none;">🔄 重新選取/拍攝</button>
+                <button id="startBtn" class="btn-blue">開相機</button>
+                <button id="captureBtn" class="btn-green" style="display:none;"> 拍照</button>
+                <button id="analyzeBtn" class="btn-green" style="display:none;"> 開始批改</button>
+                <button id="retakeBtn" class="btn-outline" style="display:none;"> 重拍</button>
             </div>
 
-            <div id="loading" class="loading-spinner">✨ AI 閱卷委員正在認真分析中，請稍候...</div>
+            <div id="loading" class="loading-spinner"> 分析中，請稍候...</div>
 
             <div id="resultArea">
                 <div class="header-actions" style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
@@ -230,7 +233,7 @@
                             <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" width="18" height="18" alt="Drive"> 
                             存至雲端硬碟
                         </button>
-                        <button onclick="window.print()" class="btn-outline" style="min-width: auto; padding: 10px 16px; font-size: 0.95rem;">🖨️ PDF</button>
+                        <button onclick="window.print()" class="btn-outline" style="min-width: auto; padding: 10px 16px; font-size: 0.95rem;"> PDF</button>
                     </div>
                 </div>
                 <div id="formattedContent" class="markdown-body"></div>
@@ -250,11 +253,8 @@
 <script type="module">
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-/* =======================================================
-   🔑 金鑰鑲嵌區 (請在下方單引號內填入您的真實憑證金鑰)
-   ======================================================= */
 const GEMINI_API_KEY = 'AIzaSyCGpATU8BwSmzBXyP6UhMfAmFjnfofYA5Q';
-const GOOGLE_CLIENT_ID = 'AIzaSyCGpATU8BwSmzBXyP6UhMfAmFjnfofYA5Q';
+const GOOGLE_CLIENT_ID = '378763084772-b6hs3q7iminur2sifraptguhqgsfvp7g.apps.googleusercontent.com';
 
 
 let stream = null;
@@ -262,6 +262,7 @@ let currentBase64 = null;
 let rawMarkdownResult = ""; 
 let tokenClient; 
 let gDriveAccessToken = null;
+let cachedCloudFiles = []; // 快取下載下來的雲端檔案清單
 
 const video = document.getElementById('video');
 const capturedImage = document.getElementById('capturedImage');
@@ -273,30 +274,27 @@ const captureBtn = document.getElementById('captureBtn');
 const analyzeBtn = document.getElementById('analyzeBtn');
 const retakeBtn = document.getElementById('retakeBtn');
 const saveDriveBtn = document.getElementById('saveDriveBtn');
+const syncDriveBtn = document.getElementById('syncDriveBtn');
 const customTopic = document.getElementById('customTopic');
 
-// 💡 頁面載入初始化
 window.onload = () => { 
     renderHistorySidePanel(); 
-    initGoogleSignIn(); // 初始化 Google 登入按鈕
+    initGoogleSignIn(); 
 };
 
 /* =======================================================
-   🌐 核心新增：Google 帳戶登入與資訊讀取邏輯
+   🌐 Google 帳戶登入與資訊讀取邏輯
    ======================================================= */
 function initGoogleSignIn() {
     if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes("請在此處貼上")) {
-        console.warn("提示：尚未在程式碼第 191 行填入真實的 GOOGLE_CLIENT_ID，暫不啟用登入按鈕。");
+        console.warn("提示：尚未填入真實的 GOOGLE_CLIENT_ID，暫不啟用登入。");
         return;
     }
-
-    // 1. 初始化 Google 帳戶服務
     google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleCredentialResponse
     });
 
-    // 2. 檢查本地有無緩存舊登入資料
     const cachedUser = localStorage.getItem('google_user_info');
     if (cachedUser) {
         showLoggedInUI(JSON.parse(cachedUser));
@@ -308,38 +306,24 @@ function initGoogleSignIn() {
 function renderGoogleSignInButton() {
     document.getElementById('googleSignInWrapper').style.display = 'block';
     document.getElementById('googleUserCard').style.display = 'none';
-    
-    // 渲染官方標準樣式登入按鈕
     google.accounts.id.renderButton(
         document.getElementById("googleSignInBtn"),
         { theme: "outline", size: "large", width: 252 }
     );
 }
 
-// 登入成功後的回呼函式 (Google 會回傳身分 JWT 憑證)
 function handleCredentialResponse(response) {
     try {
-        // 解碼 Google 傳回的 JWT Token 載荷 (純前端解碼)
         const base64Url = response.credential.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
+        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
 
-        // 讀取網頁所需的用戶資料
         const profile = JSON.parse(jsonPayload);
-        const userData = {
-            name: profile.name,        // 姓名
-            email: profile.email,      // 電子郵件
-            picture: profile.picture   // 大頭貼網址
-        };
+        const userData = { name: profile.name, email: profile.email, picture: profile.picture };
 
-        // 儲存至本地快取並更新介面
         localStorage.setItem('google_user_info', JSON.stringify(userData));
         showLoggedInUI(userData);
-    } catch (err) {
-        alert("Google 登入資料讀取失敗：" + err.message);
-    }
+    } catch (err) { alert("Google 登入失敗：" + err.message); }
 }
 
 function showLoggedInUI(user) {
@@ -348,24 +332,82 @@ function showLoggedInUI(user) {
     document.getElementById('userAvatar').src = user.picture;
     document.getElementById('userName').innerText = user.name;
     document.getElementById('userEmail').innerText = user.email;
+    syncDriveBtn.innerHTML = "🔄 同步雲端歷史";
 }
 
-// 登出按鈕事件
 document.getElementById('logoutBtn').onclick = () => {
     localStorage.removeItem('google_user_info');
+    gDriveAccessToken = null;
+    cachedCloudFiles = [];
     renderGoogleSignInButton();
+    renderHistorySidePanel([]); // 清空雲端列表，只顯示本地
 };
+
+/* =======================================================
+   ☁️ 核心新增：從 Google Drive 讀取作文歷史清單與內容
+   ======================================================= */
+syncDriveBtn.onclick = () => {
+    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes("請在此處貼上")) return alert("錯誤：請填入 GOOGLE_CLIENT_ID！");
+    
+    syncDriveBtn.innerHTML = "同步中...";
+    syncDriveBtn.disabled = true;
+
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID, 
+        scope: 'https://www.googleapis.com/auth/drive.file',
+        callback: async (tokenResponse) => {
+            if (tokenResponse && tokenResponse.access_token) { 
+                gDriveAccessToken = tokenResponse.access_token; 
+                await fetchDriveHistoryList(); 
+            } else { 
+                alert("授權失敗，無法讀取雲端硬碟。"); 
+                syncDriveBtn.innerHTML = "同步雲端歷史";
+                syncDriveBtn.disabled = false;
+            }
+        },
+        error_callback: () => { 
+            alert("授權發生錯誤。"); 
+            syncDriveBtn.innerHTML = "同步雲端歷史";
+            syncDriveBtn.disabled = false;
+        }
+    });
+
+    if (gDriveAccessToken) {
+        fetchDriveHistoryList();
+    } else {
+        tokenClient.requestAccessToken();
+    }
+};
+
+// 向 Google Drive API 請求特定名稱格式的 Markdown 檔案清單
+async function fetchDriveHistoryList() {
+    try {
+        const q = encodeURIComponent("name contains '115學測批改紀錄' and mimeType = 'text/markdown' and trashed = false");
+        const response = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,createdTime)&orderBy=createdTime%20desc`, {
+            headers: { 'Authorization': 'Bearer ' + gDriveAccessToken }
+        });
+        if (!response.ok) throw new Error("無法讀取雲端檔案清單");
+        const data = await response.json();
+        cachedCloudFiles = data.files || [];
+        renderHistorySidePanel(cachedCloudFiles);
+    } catch (err) {
+        alert("同步失敗：" + err.message);
+    } finally {
+        syncDriveBtn.innerHTML = "🔄 同步雲端歷史";
+        syncDriveBtn.disabled = false;
+    }
+}
 
 
 /* =======================================================
-   原作文批改核心邏輯 (保留雙模型備援)
+   原作文批改與側邊欄渲染邏輯優化
    ======================================================= */
 function updateDefaultTopic() {
     const type = document.getElementById('subjectType').value;
     if(type === 'EN') {
-        customTopic.value = "【題目】看圖寫作：寵物在生活中的角色。\n【要求】依 學測標準：第一段描述圖片現象，第二段說明原因及影響，文長至少 120 字。";
+        customTopic.value = "【題目】看圖寫作：寵物在生活中的角色。\n【要求】依 115 學測標準：第一段描述圖片現象，第二段說明原因及影響，文長至少 120 字。";
     } else {
-        customTopic.value = "【題目】隔在我們之間的種種。\n【要求】依 學測國寫標準：需包含隔閡原因、換位思考及回應，給予 A+ 至 C 評等。";
+        customTopic.value = "【題目】隔在我們之間的種種。\n【要求】依 115 國寫標準：需包含隔閡原因、換位思考及回應，給予 A+ 至 C 評等。";
     }
 }
 updateDefaultTopic();
@@ -422,11 +464,11 @@ async function generateWithRetryAndFallback(genAI, contentArray, maxRetries = 3,
             const is503 = err.message && (err.message.includes("503") || err.message.toLowerCase().includes("high demand"));
             if (!is503) throw err;
             if (i === maxRetries - 1) {
-                loading.innerText = `🔄 伺服器爆量，正在切換至高併發備援模型 (gemini-3.1-flash-lite)...`;
+                loading.innerText = ` 伺服器爆量，正在切換至高併發備援模型 (gemini-3.1-flash-lite)...`;
                 const fallbackModel = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" });
                 return await fallbackModel.generateContent(contentArray);
             }
-            loading.innerText = `⏰ 伺服器忙碌中，正在進行第 ${i + 1} 次自動重試...`;
+            loading.innerText = ` 伺服器忙碌中，正在進行第 ${i + 1} 次自動重試...`;
             await new Promise(resolve => setTimeout(resolve, delay));
             delay *= 2;
         }
@@ -435,21 +477,19 @@ async function generateWithRetryAndFallback(genAI, contentArray, maxRetries = 3,
 
 analyzeBtn.onclick = async () => {
     if (!currentBase64) return;
-    if (!GEMINI_API_KEY || GEMINI_API_KEY.includes("請在此處貼上")) {
-        return alert("錯誤：請先在程式碼中的 GEMINI_API_KEY 變數中填入真實的金鑰！");
-    }
+    if (!GEMINI_API_KEY || GEMINI_API_KEY.includes("請在此處貼上")) return alert("錯誤：請填入 GEMINI_API_KEY！");
 
     const loading = document.getElementById('loading');
     const resultArea = document.getElementById('resultArea');
     const formattedContent = document.getElementById('formattedContent');
 
-    loading.innerText = "✨ AI 閱卷委員正在認真分析中，請稍候...";
+    loading.innerText = "AI 閱卷委員正在認真分析中，請稍候...";
     loading.style.display = 'block'; resultArea.style.display = 'none';
     analyzeBtn.disabled = true; retakeBtn.disabled = true;
 
     try {
         const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-        const prompt = `你是一位專業的台灣學測閱卷委員。請辨識圖片中的手寫文字。\n${customTopic.value}\n請根據 115 學測評分原則進行批改，並使用 Markdown 格式輸出標題、列表與修改建議。`;
+        const prompt = `你是一位台灣學測閱卷委員。請辨識圖片中的手寫文字。\n${customTopic.value}\n請根據 學測評分原則進行批改，並使用 Markdown 格式輸出標題、列表與修改建議。`;
         const contentArray = [ prompt, { inlineData: { data: currentBase64.split(',')[1], mimeType: "image/jpeg" } } ];
         
         const result = await generateWithRetryAndFallback(genAI, contentArray, 3, 2000);
@@ -473,42 +513,99 @@ function saveToHistory(markdown) {
     history.unshift({ id: Date.now(), date: new Date().toLocaleString('zh-TW'), subject: subjectText, markdown: markdown });
     if (history.length > 20) history.pop();
     localStorage.setItem('essay_grader_history', JSON.stringify(history));
-    renderHistorySidePanel(); 
+    renderHistorySidePanel(cachedCloudFiles); 
 }
 
-function renderHistorySidePanel() {
+// 💡 渲染側邊面板：整合本地快取與雲端檔案
+function renderHistorySidePanel(cloudFiles = []) {
     const listContainer = document.getElementById('historyList');
-    let history = JSON.parse(localStorage.getItem('essay_grader_history')) || [];
-    if (history.length === 0) {
-        listContainer.innerHTML = '<p style="text-align:center; color:#a0aec0; margin-top:30px; font-weight: 500; font-size:0.9rem;">目前尚無歷史紀錄。</p>';
-    } else {
-        listContainer.innerHTML = history.map((item, index) => `
-            <div class="history-item" onclick="loadHistoryItem(${index})">
+    let localHistory = JSON.parse(localStorage.getItem('essay_grader_history')) || [];
+    let html = "";
+    
+    // 1. 渲染雲端檔案清單
+    if (cloudFiles.length > 0) {
+        html += `<div style="font-size:0.8rem; color:var(--primary-color); font-weight:bold; margin: 5px 0 8px 0;">☁️ 雲端硬碟檔案 (點擊下載)</div>`;
+        html += cloudFiles.map((file) => {
+            const subjectMatch = file.name.match(/^\[(.*?)\]/);
+            const subject = subjectMatch ? subjectMatch[1] : "作文批改";
+            const dateStr = new Date(file.createdTime).toLocaleString('zh-TW');
+            
+            return `
+                <div class="history-item" style="border-left: 4px solid var(--primary-color);" onclick="loadHistoryItem(null, true, '${file.id}')">
+                    <div class="history-title">☁️ ${subject}</div>
+                    <div class="history-date">📅 ${dateStr}</div>
+                    <div class="history-preview">連線至雲端載入報告...</div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    // 2. 渲染瀏覽器本地快取
+    if (localHistory.length > 0) {
+        html += `<div style="font-size:0.8rem; color:#718096; font-weight:bold; margin: 15px 0 8px 0;">📱 本地瀏覽器紀錄</div>`;
+        html += localHistory.map((item, index) => `
+            <div class="history-item" onclick="loadHistoryItem(${index}, false, null)">
                 <div class="history-title">${item.subject}</div>
                 <div class="history-date">📅 ${item.date}</div>
                 <div class="history-preview">${item.markdown.substring(0, 45).replace(/#/g, '')}...</div>
             </div>
         `).join('');
     }
+    
+    if (cloudFiles.length === 0 && localHistory.length === 0) {
+        listContainer.innerHTML = '<p style="text-align:center; color:#a0aec0; margin-top:30px; font-weight: 500; font-size:0.9rem;">目前尚無歷史紀錄。</p>';
+    } else {
+        listContainer.innerHTML = html;
+    }
 }
 
-window.loadHistoryItem = (index) => {
-    let history = JSON.parse(localStorage.getItem('essay_grader_history')) || [];
-    const item = history[index];
-    if(item) {
-        rawMarkdownResult = item.markdown;
-        document.getElementById('reportTitle').innerText = `批改報告 (歷史紀錄：${item.date})`;
-        document.getElementById('formattedContent').innerHTML = marked.parse(item.markdown);
-        document.getElementById('resultArea').style.display = 'block';
-        placeholder.style.display = 'flex'; placeholder.innerText = '歷史紀錄不顯示原始圖片'; capturedImage.style.display = 'none';
-        setTimeout(() => document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+// 💡 載入歷史項目：判斷是本地還是雲端，雲端則即時向 API 發送下載請求
+window.loadHistoryItem = async (index, isDrive, driveId) => {
+    const formattedContent = document.getElementById('formattedContent');
+    const loading = document.getElementById('loading');
+    const resultArea = document.getElementById('resultArea');
+
+    if (isDrive) {
+        if (!gDriveAccessToken) return alert("請先點擊上方『同步雲端歷史』按鈕完成金鑰授權。");
+        
+        loading.innerText = "正在從雲端硬碟下載報告，請稍候...";
+        loading.style.display = 'block'; resultArea.style.display = 'none';
+        
+        try {
+            // 向 Google Drive 請求下載二進位/文字媒體內容
+            const res = await fetch(`https://www.googleapis.com/drive/v3/files/${driveId}?alt=media`, {
+                headers: { 'Authorization': 'Bearer ' + gDriveAccessToken }
+            });
+            if (!res.ok) throw new Error("通訊錯誤，無法取得檔案。");
+            
+            rawMarkdownResult = await res.text();
+            document.getElementById('reportTitle').innerText = `批改報告 (來自 Google 雲端硬碟)`;
+            formattedContent.innerHTML = marked.parse(rawMarkdownResult);
+            
+            loading.style.display = 'none'; resultArea.style.display = 'block';
+            placeholder.style.display = 'flex'; placeholder.innerText = '雲端紀錄不顯示原始圖片'; capturedImage.style.display = 'none';
+            setTimeout(() => resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+        } catch (err) {
+            alert("從雲端載入報告失敗：" + err.message);
+            loading.style.display = 'none';
+        }
+    } else {
+        // 載入本地儲存資料
+        let history = JSON.parse(localStorage.getItem('essay_grader_history')) || [];
+        const item = history[index];
+        if(item) {
+            rawMarkdownResult = item.markdown;
+            document.getElementById('reportTitle').innerText = `批改報告 (歷史紀錄：${item.date})`;
+            formattedContent.innerHTML = marked.parse(item.markdown);
+            resultArea.style.display = 'block';
+            placeholder.style.display = 'flex'; placeholder.innerText = '歷史紀錄不顯示原始圖片'; capturedImage.style.display = 'none';
+            setTimeout(() => resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+        }
     }
 };
 
 saveDriveBtn.onclick = () => {
-    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes("請在此處貼上")) {
-        return alert("錯誤：若要使用雲端硬碟功能，請先在程式碼中的 GOOGLE_CLIENT_ID 中填入憑證！");
-    }
+    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes("請在此處貼上")) return alert("錯誤：請填入 GOOGLE_CLIENT_ID！");
     if (!rawMarkdownResult) return alert("沒有可儲存的批改結果。");
     saveDriveBtn.innerHTML = "⏳ 授權與儲存中..."; saveDriveBtn.disabled = true;
 
@@ -518,13 +615,13 @@ saveDriveBtn.onclick = () => {
             if (tokenResponse && tokenResponse.access_token) { gDriveAccessToken = tokenResponse.access_token; uploadToDrive(); } 
             else { alert("登入或授權失敗。"); resetDriveBtn(); }
         },
-        error_callback: (err) => { alert("授權發生錯誤，請檢查 Client ID。"); resetDriveBtn(); }
+        error_callback: () => { alert("授權發生錯誤。"); resetDriveBtn(); }
     });
     if (gDriveAccessToken) uploadToDrive(); else tokenClient.requestAccessToken();
 };
 
 async function uploadToDrive() {
-    saveDriveBtn.innerHTML = "☁️ 上傳檔案中...";
+    saveDriveBtn.innerHTML = "上傳檔案中...";
     const dateStr = new Date().toLocaleString('zh-TW', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }).replace(/[\/\s:]/g, '');
     const subject = document.getElementById('subjectType').options[document.getElementById('subjectType').selectedIndex].text;
     const fileName = `[${subject}] 115學測批改紀錄_${dateStr}.md`; 
@@ -538,8 +635,13 @@ async function uploadToDrive() {
         const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
             method: 'POST', headers: new Headers({ 'Authorization': 'Bearer ' + gDriveAccessToken }), body: form
         });
-        if (response.ok) alert(`✅ 成功！檔案已儲存至您的 Google 雲端硬碟\n檔名：${fileName}`);
-        else { const errData = await response.json(); alert("上傳失敗: " + errData.error.message); }
+        if (response.ok) {
+            alert(`ok,檔案已儲存至您的 Google 雲端硬碟\n檔名：${fileName}`);
+            // 💡 儲存成功後，自動呼叫清單查詢更新側邊欄紀錄
+            fetchDriveHistoryList();
+        } else { 
+            const errData = await response.json(); alert("上傳失敗: " + errData.error.message); 
+        }
     } catch (error) { alert("網路錯誤或上傳中斷：" + error.message); } 
     finally { resetDriveBtn(); }
 }
