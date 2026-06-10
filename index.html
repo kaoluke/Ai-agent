@@ -332,7 +332,7 @@ function showLoggedInUI(user) {
     document.getElementById('userAvatar').src = user.picture;
     document.getElementById('userName').innerText = user.name;
     document.getElementById('userEmail').innerText = user.email;
-    syncDriveBtn.innerHTML = "🔄 同步雲端歷史";
+    syncDriveBtn.innerHTML = "同步雲端歷史";
 }
 
 document.getElementById('logoutBtn').onclick = () => {
@@ -524,7 +524,7 @@ function renderHistorySidePanel(cloudFiles = []) {
     
     // 1. 渲染雲端檔案清單
     if (cloudFiles.length > 0) {
-        html += `<div style="font-size:0.8rem; color:var(--primary-color); font-weight:bold; margin: 5px 0 8px 0;">☁️ 雲端硬碟檔案 (點擊下載)</div>`;
+        html += `<div style="font-size:0.8rem; color:var(--primary-color); font-weight:bold; margin: 5px 0 8px 0;">雲端硬碟檔案 (點擊下載)</div>`;
         html += cloudFiles.map((file) => {
             const subjectMatch = file.name.match(/^\[(.*?)\]/);
             const subject = subjectMatch ? subjectMatch[1] : "作文批改";
@@ -532,14 +532,13 @@ function renderHistorySidePanel(cloudFiles = []) {
             
             return `
                 <div class="history-item" style="border-left: 4px solid var(--primary-color);" onclick="loadHistoryItem(null, true, '${file.id}')">
-                    <div class="history-title">☁️ ${subject}</div>
-                    <div class="history-date">📅 ${dateStr}</div>
+                    <div class="history-title">${subject}</div>
+                    <div class="history-date">${dateStr}</div>
                     <div class="history-preview">連線至雲端載入報告...</div>
                 </div>
             `;
         }).join('');
     }
-    
     // 2. 渲染瀏覽器本地快取
     if (localHistory.length > 0) {
         html += `<div style="font-size:0.8rem; color:#718096; font-weight:bold; margin: 15px 0 8px 0;">📱 本地瀏覽器紀錄</div>`;
